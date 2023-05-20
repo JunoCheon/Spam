@@ -37,8 +37,6 @@ def crawl(fristID = 'cjhnono1'):
     while(True):
         # origin_df=pd.read_csv('crawl.csv',encoding='utf-8')
         # url='https://nid.naver.com/nidlogin.login'
-        # id="cjhnono1"
-        # pw="Sshshdi0930"
 
 
         browser=webdriver.Chrome(ChromeDriverManager().install())
