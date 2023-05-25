@@ -10,6 +10,14 @@ from email.mime.text import MIMEText
 
 def openNeighborUrl(driver, naverId):
     driver.get('https://m.blog.naver.com/BuddyList.nhn?blogId=%s' % naverId)
+    try:
+        bs = BeautifulSoup(driver.page_source,'html.parser')
+        text = bs.find_all('p')[0]
+        if text.text == '이웃이 없습니다.':
+            print('이웃이 없습니다.')
+            return
+    except:
+        pass
     for i in range(10):
         scrollDown(driver)
      
@@ -22,15 +30,28 @@ def getIds(sourse):
     links = bs.findAll('a', {'class':'link___8Sha'})   
 
     foundIds = []
-
-    for count,link in enumerate(links):
+    for link in links:
         fid = link.get('href')
         foundIds.append(fid[fid.rfind('/')+1::])
     return foundIds
 
-
-
-def crawl(fristID = 'cjhnono1'):
+#check duplicate from my txt file
+def checkDuplicate(ids,crwalcsv):
+    #ids : list of ids
+    #crwalcsv : csv file name
+    try:
+        f = open(crwalcsv, 'r', encoding='utf-8')
+    except:
+        f = open(crwalcsv, 'w', encoding='utf-8')
+        f.close()
+        f = open(crwalcsv, 'r', encoding='utf-8')
+    lines = f.readlines()
+    lines = [id.strip() for id in lines]
+    f.close()
+    # remove Duplicate and Return ids
+    return list(set(ids) - set(lines))
+    
+def crawl(crwalcsv,fristID = 'cjhnono1'):
     # fristID = 'cjhnono1'
     IDset = set([fristID])
 
@@ -55,7 +76,8 @@ def crawl(fristID = 'cjhnono1'):
         Id = random.choice(list(IDset))
         #print(Id)
         openNeighborUrl(browser, Id)
-        IDset.update(getIds(browser.page_source))
+        ids = getIds(browser.page_source)
+        IDset.update(checkDuplicate(ids,crwalcsv))
 
         if len(IDset) > 500:
             print("ID 개수가 500개를 넘었습니다.")
@@ -71,8 +93,20 @@ def crawl(fristID = 'cjhnono1'):
 
 
 
-def sendMail(firstid, id, pw, title, body,portNum):
-    recipients = [a+'@naver.com' for a in crawl(firstid)]
+def sendMail(firstid, id, pw, title, body,crwalcsv):
+    
+    IDset = crawl(firstid,crwalcsv)
+    
+    #write csv file
+    with open(crwalcsv, 'w', encoding='utf-8') as f:
+        for id in IDset:
+            f.write(id+'\n')
+        f.close()
+
+    
+    
+    #send mail
+    recipients = [a+'@naver.com' for a in IDset]
     message = MIMEMultipart()
     message['Subject'] = title
     message['From'] = id+"@naver.com"
@@ -97,13 +131,23 @@ def sendMail(firstid, id, pw, title, body,portNum):
     email_id = id
     email_pw = pw
 
-    server = smtplib.SMTP_SSL('smtp.naver.com',portNum)
+    server = smtplib.SMTP_SSL('smtp.naver.com',465)
     server.ehlo()
     server.login(email_id,email_pw)
     server.sendmail(message['From'],recipients,message.as_string())
     server.quit()
     
-#%%
+def readTextFile(fileName):
+    # return :  title, body
+    f = open(fileName, 'r', encoding='utf-8')
+    lines = f.readlines()
+    f.close()
+    
+    title = lines[0]
+    body = ""
+    for line in lines[1:]:
+        body += line
+    return title, body
 
 id = input("Press Enter Naver ID\n")
 pw = input("Press Enter Naver PW\n")
@@ -111,43 +155,11 @@ pw = input("Press Enter Naver PW\n")
 
 firstid = input("이웃탐색을 시작할 ID를 입력하세요\n")
 
-# Title = input("Press Enter Title")
-# Body = input("Press Enter Body")
-Title = """ 
-안녕하세요, 자일리톨캔디 스마트스토어의 대표자 이원재입니다. 
-"""
-body = """ 
-안녕하세요, 저는 별뜰무렵이라는 자일리톨 캔디 스마트스토어의 운영자입니다. \n
-작성하신 블로그 글을 보고 메일 드리게 되었습니다. \n
-\n
-저희 별뜰무렵은 현재 네이버 스마트스토어 내에서 가장 좋은 가성비로 캔디를 판매중에 있습니다. \n
-비싼 가격의 자일리톨 캔디를 모두가 저렴하게 즐기실 수 있으면 좋겠다는 마음으로 운영하고 있습니다.\n
-자일리톨 캔디에 관심이 많은 분이시라면 좋은 품질의 상품을 저렴하게 구매할 수 있으실 것이라 자부하여 이렇게 실례를 무릅쓰고 추천 메일을 보내드립니다. \n
-\n
-혹시 저희 자일리톨캔디를 무료로 보내드리면 받아보실 의향이 있으신지요? \n
-기타 사항 궁금하신 점이 있으시다면 회신 주십시오.\n
-기다리고 있겠습니다. 좋은 하루 되세요~!\n
-\n
-\n
-\n
-―――――――――――――――――――――――――――――――――――――――――――
-\n
-별뜰무렵\n
-\n
-(02504) 서울시 동대문구 서울시립대로 163(전농동 90) 백주년기념관 217호\n
-\n
-별뜰무렵 스마트스토어 ｜ 대표\n
-\n
-\n
-\n
-이 원 재\n
-\n
-\n
-Tel 010-9043-9549 Email wonjae961004@naver.com\n
-\n
-"""
-
-print(Title)
+mytxt = input("Press Enter Mail Text File Name(ex : C:\\Users\\user\\Desktop\\Spam\\mail.txt)\n")
+crwalcsv = input("Press Enter Id List File Name(ex : C:\\Users\\user\\Desktop\\Spam\\list.csv)\n")
+title, body = readTextFile(mytxt)
+print("제목 : ")
+print(title)
+print("본문 : ")
 print(body)
-sendMail(firstid, id, pw, Title, body,portNum = 465)
-# %%
+sendMail(firstid, id, pw, title, body,crwalcsv)
