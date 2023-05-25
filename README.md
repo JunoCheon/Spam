@@ -13,10 +13,10 @@
 입력순서
 
 - naverID  
-wonjae961004
+cjhnono1
 
 - naverPassword  
-********
+"********"
 
 - SearchID  
 유명블로거ID
