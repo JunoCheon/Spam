@@ -95,7 +95,7 @@ def crawl(crwalcsv,fristID = 'cjhnono1'):
 
 def sendMail(firstid, id, pw, title, body,crwalcsv):
     
-    IDset = crawl(firstid,crwalcsv)
+    IDset = crawl(crwalcsv,firstid)
     
     #write csv file
     with open(crwalcsv, 'w', encoding='utf-8') as f:
@@ -149,17 +149,25 @@ def readTextFile(fileName):
         body += line
     return title, body
 
-id = input("Press Enter Naver ID\n")
-pw = input("Press Enter Naver PW\n")
+# id = input("Press Enter Naver ID\n")
+# pw = input("Press Enter Naver PW\n")
 #portNum = int(input("Press Enter Port Number\n"))
 
-firstid = input("이웃탐색을 시작할 ID를 입력하세요\n")
+def myinput():
+    id = input("Press Enter Naver ID\n")
+    pw = input("Press Enter Naver PW\n")
+    #portNum = int(input("Press Enter Port Number\n")
+    firstid = input("Press Enter First ID\n")
+    mytxt = input("Press Enter Mail Text File Name(ex : C:\\Users\\user\\Desktop\\Spam\\mail.txt)\n")
+    crwalcsv = input("Press Enter Id List File Name(ex : C:\\Users\\user\\Desktop\\Spam\\list.csv)\n")
+    title, body = readTextFile(mytxt)
+    print("제목 : ")
+    print(title)
+    print("본문 : ")
+    print(body)
+    
+    return id, pw, firstid, title, body, crwalcsv
 
-mytxt = input("Press Enter Mail Text File Name(ex : C:\\Users\\user\\Desktop\\Spam\\mail.txt)\n")
-crwalcsv = input("Press Enter Id List File Name(ex : C:\\Users\\user\\Desktop\\Spam\\list.csv)\n")
-title, body = readTextFile(mytxt)
-print("제목 : ")
-print(title)
-print("본문 : ")
-print(body)
+id, pw, firstid, title, body, crwalcsv = myinput()
+# firstid = input("Press Enter First ID\n")
 sendMail(firstid, id, pw, title, body,crwalcsv)
